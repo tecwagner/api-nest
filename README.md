@@ -155,3 +155,96 @@
 
      @Mutation(() => Boolean)
     - criar uma query em graphql para delete no usuario por id.
+
+## Criando o Doker no projeto
+
+    - Cada linha dentro do arquivo é considerado um stap, são salvos em cache.
+
+    - criado o arquivo na raiz do projeto: Dockerfile.
+
+        FROM node:12-alpine = imagem do projeto criada dentro dockerhub
+
+        WORKDIR /home/api = local onde o projeto será alocado no container
+
+        * Truque para melhorar o desempenho de alteração dos arquivos
+            Em cada alteração no projeto não será necessario a instalação dos pacotes a baixo ao menos que eles tenha cido afetados.
+
+            - COPY package.json .
+            - COPY package-lock.json .
+
+        COPY . . = Ele herda o caminho definido no workdir
+
+        RUN npm install = comando para instalar o node dentro do container.
+
+        CMD npm run start:dev = comando para executar o projeto dentro do docker.
+
+    . Após a criação do arquivo podemos executar o docker utilizando o comando.
+
+        Comando docker build -t [nome do projeto] . = O ponto no final do comando é o diretorio
+        execute: docker build -t api-nest .
+
+        execute: docker images = Lista o container com as imagens criadas.
+
+        Para rodar o projeto pode executart: docker run e o [nome do projeto] que é listado no container
+
+            execute: docker run api-nest
+
+## Criando o banco de dados no docker
+
+    - criado o arquivo na raiz do projeto: docker-compose.yml
+
+    - Este arquivo terá as imagens e configuração do banco de dados
+
+        documentação para configurar docker compose: https://docs.docker.com/compose/
+
+    comando para iniciar o banco
+        execute: docker-compose up
+
+    No arquivo ormconfig.json
+
+        O campo de 'host' deve ser definida pelo nome da base de dados que foi definida para o docker no arquivo: docker-compose.yml
+
+    Em seguida deve executar um novo comando para rebuid no arquivo docker-compose.yml.
+
+        execute: docker-compose up --build
+
+    O service > api
+
+        container_name: nest_api = Imagem da nossa api que foi criada para o docker hub
+        build: . = O build '.' é o diretorio principal para aplicação ser executada
+        ports:
+        - '3000:3000' = Porta de execução da API
+        volumes:
+        - .:/home/api = O volume é um espelhamento do diretorio local, para que as alterações realizada seja atualizadas em tempo real.
+
+        - /home/api/node_modules = É um espelhamento do diretorio do container para a maquina local
+
+    O arquivo dockerfile foi editado para fazer rodar o npm install.
+
+        CMD npm run start:docker:dev
+
+    O arquivo package.json foi acrecentado um comando para executar o comando adicionado no aquivo Dockerfile.
+
+         "start:docker:dev": "npm install && nest start --watch",
+
+    Para executar o projeto sem build rodar o comando.
+
+        execute: docker-compose up
+
+    Em caso de problema com o Mapeamento de Volumes no docker-compose.yml
+
+        Podemos rodar um comando para que o docker faça uma copia do 'node-modules'
+
+        execute: docker cp nest_api:/home/api/node_modules/. ./node_modules
+
+## Instalação de dependecias dentro do container docker
+
+    exemplo: docker-compose exec api npm install [nome da dependencia]
+
+    execute: docker-compose exec api npm install nodemon
+
+    Observação: Todos os comandos não serão mais executados local do computador, sim dentro do container docker.
+
+        dependecias nestjs criando modulo dentro do container.
+
+        execute: docker-compose exec api nest g service [nome do modulo]
