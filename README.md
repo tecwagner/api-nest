@@ -248,3 +248,13 @@
         dependecias nestjs criando modulo dentro do container.
 
         execute: docker-compose exec api nest g service [nome do modulo]
+
+## Start projeto
+
+    execute: docker compose up
+
+## Configurar as Variaveis de Ambiente
+
+    Podemos renomear o arquivo [ormconfig.json para ormconfig.js]
+
+    assim iremos passar as variaveis de ambiente para um arquivo javascript.
