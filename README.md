@@ -9,6 +9,22 @@
     - Postegresql
     - graphql
 
+## Instalar dependencias local
+
+    - npm install
+
+## Executar projeto local
+
+    - npm run start:dev
+
+## Executar test local
+
+    - npm run test:cov
+
+## Executart o projeto no docker
+
+    - docker compose up
+
 ## Instalando o postgressql
 
     - execute: npm install --save typeorm pg
@@ -258,3 +274,192 @@
     Podemos renomear o arquivo [ormconfig.json para ormconfig.js]
 
     assim iremos passar as variaveis de ambiente para um arquivo javascript.
+
+## Principio de test FIRST
+
+    - F = Fast (Rapido)
+    - I = Independent = (Teste tem ser independente)
+    - R = Repeatable = (Tem que repetir e toda repetição tem que retorna o mesmo resultado)
+    - S = Self Validation (Trataiva de validação)
+    - T = Timely (Feito a tempop)
+
+## Aplicando Test Unit User.Service.Spec
+
+    . Criando uma describe para cada funcionalidade
+
+        - Identificar o use Repository
+
+        - Criando uma variavel com as funções mockRepository de User
+
+            A cada metodo de chamada utilizando o respository
+
+## Criar um arquivo TestUtil
+
+    - Desntro de src > common > test.
+
+        - Dentro deste arquivo será criado um mock de dados de usuário.
+
+## Primeiro teste escrito será listar todos usuários.
+
+    - describe (É o corpo do teste) = findAllUsers
+
+    - it (Ele informa o que deve e oque não deve ser feito) = sholud be list all users
+
+        - pegar um usuário valido! =  const user = TestUtil.giveAmeAvalid
+
+        - é preciso buscar o resultado que está no banco. Neste momento podemos usar o mockRepository. = mockRepository.find.mockReturnValue([user, user]);
+
+        - é passado uma chamada assincrona na service para chamar a função  = const users = await service.findAllUsers();
+
+        - Dentro de it() teste pode existir diversos expect.
+            - expect ( é o resultado esperado do teste executado que será a quantidade de usuário)
+            - expect (chama o mockRespository, na função find, para saber a quantidade de chamada que foi realizada.)
+
+    - describe ( corpo do teste ) = findUserById
+
+    - it (Ele informa o que deve e oque não deve ser feito) =
+
+        - pega um usuário válido = const user = await TestUtil.giveAmeAvalidUser();
+
+        - é preciso buscar o resultado que está no banco. Neste momento podemos usar o mockRepository = mockRepository.findOne.mockReturnValue(user);
+
+        - O service guarda o metodo findUserById, será testado esse metodo da service que deve retorna um usuário existente passando o paramentro 'id'
+
+        - O expect usuário existente = expect(userFound).toMatchObject({ name: user.name });
+
+        - O expect mockRepository.findOne determina a quantidade vez que ele foi chamada = expect(mockRepository.findOne).toHaveBeenCalledTimes(1)
+
+    Para fazer o tratamento do if dentro da função findUserById()
+
+    - Será criado um novo describe( aguardando um return de exception de usuário inválido)
+
+    - it (Ele informa o que deve e oque não deve ser feito) =
+
+        - é preciso buscar o resultado que está no banco. Neste momento podemos usar o mockRepository = mockRepository.findOne.mockReturnValue(user);
+
+        - O expect dentro função vai receber a chamada do metodo de service dentro =  expect(await service.findUserById('3'))
+
+        - passando o reject exception instaciando o metodo para validar a exeção = .rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+
+       - O expect mockRepository.findOne determina a quantidade vez que ele foi chamada = expect(mockRepository.findOne).toHaveBeenCalledTimes(1)
+
+## Criar um reset para os metodos de teste
+
+    - utilizando da função beforeEach() passando o reset para limpar todos o metodos do service.
+
+        . exemplo:
+
+        beforeEach(() => {
+            mockRepository.find.mockReset();
+            mockRepository.findOne.mockReset();
+            mockRepository.create.mockReset();
+            mockRepository.save.mockReset();
+            mockRepository.update.mockReset();
+            mockRepository.delete.mockReset();
+        });
+
+## Teste de criação de usuario
+
+    - describe (É o corpo do teste) = createUser
+
+    - it (Ele informa o que deve e oque não deve ser feito) = should create a user
+
+        - pegar um usuário valido! =  const user = TestUtil.giveAmeAvalid
+
+        - é preciso buscar o resultado que está no banco. Neste momento podemos usar o mockRepository. =
+        mockRepository.save.mockReturnValue(user);
+        mockRepository.create.mockReturnValue(user);
+
+        - O create user faz uma chamada asincrona no service de create por usuario.
+
+        - O expect(saveUser).toMatchObject(user) = Ele recebe um objeto user e faz comparação utilizando '.toMatchObject(user)' para ter certeza se os valores são iguais
+
+    - it (validar a exception de criação de usuario, não existente)
+
+            - ele recebe o mockRepository de usuarios do TestUtil
+
+            - Para validar a exception é preciso passar pela criação e save os metodos createUser.
+
+            - Para validar o metodo service.createUser(user)
+
+                - será adicionado .cath(e =>) essa função faz o tratamento de validação da exception.
+
+                    . testado a instacia do evento de erro que está dentro do if.
+
+                    . testando a mensagem de objeto enviada pelo exception.
+
+## Criação de teste update
+
+    - describe (É o corpo do teste) = update
+
+        - it (Ele informa o que deve e oque não deve ser feito) = should update a user
+
+        - pegar um usuário valido! =  const user = TestUtil.giveAmeAvalid
+
+        - criar uma variavel de usuário para o update
+
+        - Os mockRepository estão acesando os metodos do updateUser
+
+            . findOne = recebe um usuario que está mocado
+
+            . update = recebe um objeto de dados uma copia 'updatedUser' de usuário que está mocado
+
+            . em seguida faz a update do user
+
+        - Os mockRepository estão acesando os metodos do create
+
+            . findOne = recebe um usuario que está mocado
+
+            . update = recebe um objeto de dados uma copia 'updatedUser' de usuário que está mocado
+
+            . em seguida faz a criação de um novo user
+
+            - É criado o resultUser para acessar o metodo service.update( que recebe o 'id' do usuário mocado.)
+
+                . recebe ...user, que é os dados mocado do usuário
+
+                . recebe ...updateUser, que é um objeto dos dados a ser alterado.
+
+            - Expect retorna o resultado do 'resultUser' que o objeto 'updatedUser' mocado.
+
+            - Cada expect create, fidOne e update. Deve ser executado somente uma vez.
+
+## Criação de teste de delete.
+
+     - describe (É o corpo do teste) = deleteUser
+
+        - it (Ele informa o que deve e oque não deve ser feito) = should delete a existing user
+
+        - pegar um usuário valido! =  const user = TestUtil.giveAmeAvalid
+
+        - criar uma variavel de deleteUser para acessar o metodo service.deleteUser =  const deletedUser = service.deleteUser('1'); passnado o id que será deletado
+
+        - Os mockRepository estão acesando os metodos do deleteUser
+
+            . findOne = recebe um usuario que está mocado
+
+            . delete = recebe um usuário está mocado e será deletado.
+
+        - O expect recebe o resultado do deletedUser e deve retorna 'true'
+
+        - Cada expect fidOne e delete. Deve ser executado somente uma vez.
+
+        - É preciso validar o usuário inexistente
+
+            it (Should not delete a inexisting user)
+
+                - o recebe o resultado do metodo 'null' = mockRepository.delete.mockReturnValue(null);
+
+                - A variavel deletedUser recebe um 'id' inválido = const deletedUser = service.deleteUser('5');
+
+                - o expect deve receber 'false' = expect(deletedUser).toBe(false);
+
+## Refatorando o codigo
+
+    - No arquivo package.json
+
+        - Adicione outro metodo de teste = "test:vew": "jest --verbose",
+
+            . execute o comando: npm run test:vew
