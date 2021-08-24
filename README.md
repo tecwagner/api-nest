@@ -8,6 +8,7 @@
     - typeORM Integration
     - Postegresql
     - graphql
+    - Docker
 
 ## Instalar dependencias local
 
@@ -255,9 +256,9 @@
 
 ## Instalação de dependecias dentro do container docker
 
-    exemplo: docker-compose exec api npm install [nome da dependencia]
+    exemplo: docker exec [api_nest ou id container] npm install [nome da dependencia]
 
-    execute: docker-compose exec api npm install nodemon
+    execute: docker  exec f34ca92b0d86  yarn add nodemon
 
     Observação: Todos os comandos não serão mais executados local do computador, sim dentro do container docker.
 
@@ -463,3 +464,205 @@
         - Adicione outro metodo de teste = "test:vew": "jest --verbose",
 
             . execute o comando: npm run test:vew
+
+## Criando Authenticação de usuário validando com jwt
+
+    . Para realizar essa authenticação de usário será utilizado o a lib https://www.passportjs.org/packages/.
+
+    . Documentação que indica o nestjs: https://docs.nestjs.com/security/authentication.
+
+## Na pasta User iremos acessar a entidade.
+
+    - src > user >  user.entity.ts.
+
+        - Será adicionado mais um campo para o password com tipo string.
+
+             - adicione a propriedade @HideField() no password, pra não ser retornado, no filtro de users
+
+        - Nesse campo será aplicado o tratamento de transformes, para reber e enviar dados do banco de dados.
+
+    - Crie uma pasta helpers > crypto.ts
+
+        - instalar a lib bcrypt.
+
+            execute: docker  exec [nome api ou id container] yarn add bcrypt
+
+        - instalat o tipo da lib em modo de desenvolvimento para ter acesso aos auto import.
+
+
+            execute: docker exec [nome api ou id container] yarn add @types/bcrypt -D.
+
+    - Return na função hashSync() que você pretende cripto grafar.
+
+        - No to() recebe o password para ser cripottafada
+
+            . E retorna ela criptografada.
+
+        - O from() traz a senha criptografada do to().
+
+        - O nome do meu metodo: hashPasswordTransform.
+
+            . Será adicionado na entity.ts, no objeto do password{transformer: hashPasswordTransform}
+
+    Nossos Dtos
+
+        - Na classe Create User Input, adicione o campo de password
+
+            @IsString()
+            @IsNotEmpty({ message: 'Este campo senha não pode estar vazio' })
+            password: string;
+
+        - Na classe Update User Input, adicione o campo de password, será um campo opcional
+
+            @IsString()
+            @IsOptional()
+            @IsNotEmpty({ message: 'Este campo senha não pode estar vazio' })
+            password: string;
+
+## Pesquisar usuário pelo e-mail
+
+    - Na classe UserService
+
+        - Será adicionado um metodo de busca por email findUserByEmail().
+
+            . Passando um objeto where: {email}
+
+
+    - Na classe UserResolver
+
+        - Será adicionado um metodo de busca por email findUserByEmail().
+
+        - userByEmail()
+
+# Criar modulo Auth
+
+    - Para criar o module de Authentication
+
+        - Execute o comando: nest g mo auth
+
+    - Criar a classe AuthService
+
+        - Execute o comando: nest g s auth
+
+    - Criar a classe AuthResolve
+
+        - Execute o comando: nest g r auth
+
+## Criar uma pasta de DTO para o auth
+
+    - src > auth > dto
+
+## Criando os metodos de validação na classe AuthService
+
+    - Criar o metodo para validar o usuário, verificando se senha é valida.
+
+        - A função validateUser(data: AuthInput) = Recebe as tipagens que foram declaradas no dto.
+
+        - Tipar o return do validateUser.
+
+            - Será criado a tipagem dentro da pasta DTO
+
+                . auth.type.ts.
+
+                - O que será retornado? O usuario e o token.
+
+                    . async validateUser(data: AuthInput): Promise<AuthType> = Importado a tipagem.
+
+## Criando os metodos de validação na classe AuthResolver
+
+    - Criando a Mutation de login.
+
+    - Esquecer de passar o retorno da tipagem na @Mutation
+
+        . @Mutation(() => AuthType)
+
+## Criando os metodos de validação na classe AuthModule
+
+    - importando o UserService para o providers:
+
+    - Fazer o imports: [TypeOrmModule.forFeature([User])],
+
+## Instalar o JWT para criptografar a senha
+
+    * Documentação: https://docs.nestjs.com/security/authentication#jwt-functionality
+
+    - Intall passport
+
+        - npm install --save @nestjs/passport passport passport-local
+
+        - npm install --save-dev @types/passport-local
+
+    - Install jwt passport
+
+        - npm install --save @nestjs/jwt passport-jwt
+
+        - npm install --save-dev @types/passport-jwt
+
+## Criar uma metodo privado na classe auth.service.ts
+
+     - Adicione a classe como private do jwtService no constructor() e faça o import.
+
+     - Criando uma classe privada para criação do token. Recebendo o usuário como parametro.
+
+        - Passando o retorno do this.jwtService.signAsync(payload)
+
+     - Faça a chamada token atraves do metdodo jwtToken que foi criado.
+
+            . const token = await this.jwtToken(user);
+
+            . Recebendo o usuário.
+
+## Na classe auth.module.ts
+
+    * Documentação: https://docs.nestjs.com/security/authentication#jwt-functionality
+
+    - É preciso importar o JwtModule.
+
+    - Para definição da chave secreta para geração do token, é necessario criar no .env.
+
+        - JWT_SECRET=*******
+
+    - Para referenciar a chave secreta dentro do auth.module.
+
+        - Utilizamos a função register
+
+             JwtModule.registerAsync({
+                useFactory: () => ({
+                    secret: process.env.JWT_SECRET,
+                    signOptions: {
+                    expiresIn: '30s',
+                    },
+                }),
+             }),
+
+## Criar classe jwt.strategy.ts
+
+    - src > auth > jwt.strategy.ts
+
+    A validação será feito pelo payload do id do usuario que está no banco de dados
+
+    Agora podemos atender ao nosso requisito final: proteger os terminais, exigindo que um JWT válido esteja presente na solicitação. O Passport também pode nos ajudar aqui. Ele fornece a estratégia passport-jwt para proteger endpoints RESTful com JSON Web Tokens. Comece criando um arquivo chamado jwt.strategy.ts na auth pasta e adicione o seguinte código:
+
+    - Importar pra dentro do providers: [JwtStrategy] na classe auth.module.ts
+
+## Criar class auth.guard.ts
+
+    - src > auth > auth.guard.ts
+
+## Criar um guard das rotas
+
+    Para usar um AuthGuard com GraphQL , estenda a classe AuthGuard integrada e substitua o método getRequest ().
+
+## Adicionar context para fazer a request da requisição utilizando Graphql
+
+    - src > app.module
+
+        - GraphQLModule.forRoot({ context: ({ req }) => ({ req }), })
+
+## Adicionar o Guard dentro da rota
+
+    - Na classe user.resolver.ts
+
+        - Adicione acima da notation @Query a Notation @UseGuards(GqlAuthGuard)
+
+          - Passando o nome da classe auth.guard.ts = GqlAuthGuard
