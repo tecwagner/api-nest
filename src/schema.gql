@@ -5,6 +5,7 @@
 type User {
   id: ID!
   name: String!
+  admin: Boolean!
   email: String!
 }
 
@@ -28,13 +29,15 @@ type Mutation {
 input CreateUserInput {
   name: String!
   email: String!
+  admin: Boolean!
   password: String!
 }
 
 input UpdateUserInput {
   name: String
   email: String
-  password: String!
+  admin: Boolean
+  password: String
 }
 
 input AuthInput {

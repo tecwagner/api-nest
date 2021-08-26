@@ -24,11 +24,9 @@ export class AuthService {
 
     const token = await this.jwtToken(user);
 
-    console.log('token', token);
-
     return {
       user,
-      token,
+      tokens: token,
     };
   }
 
