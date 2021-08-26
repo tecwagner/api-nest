@@ -38,6 +38,7 @@ export class UserService {
   async createUser(data: CreateUserInput): Promise<User> {
     const user = this.userRepository.create(data);
     const userSaved = await this.userRepository.save(user);
+    console.log(userSaved, 'save');
 
     if (!userSaved) {
       throw new InternalServerErrorException('Problema ao criar o usuário');
@@ -48,8 +49,8 @@ export class UserService {
   async updateUser(id: string, data: UpdateUserInput): Promise<User> {
     const user = await this.findUserById(id);
     await this.userRepository.update(user, { ...data });
+    const userUpdated = this.userRepository.save({ ...user, ...data });
 
-    const userUpdated = this.userRepository.create({ ...user, ...data });
     return userUpdated;
   }
 
